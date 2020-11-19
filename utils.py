@@ -30,25 +30,41 @@ def test_on_estimator(pipeline, X_test_NF, file_path, transform_fn=lambda x: x):
     np.savetxt(file_path, yhat_positive_proba)
 
 
-def plot_grid_search(cv_results, grid_param, name_param):
-    pass
-    # # Get Test Scores Mean and std for each grid search
-    # mean_test_score_k = cv_results['mean_test_score']
-    # mean_train_score_k = cv_results['mean_train_score']
+# Plot one: A look at a single CV
+def plot_cv_single_param(cv_results, param_name, param_label):
+    param_values = cv_results[f'param_{param_name}']
+    mean_test_score = cv_results['mean_test_score']
+    mean_train_score = cv_results['mean_train_score']
 
-    # # Plot Grid search scores
-    # _, ax = plt.subplots(1, 1)
+    # Plot Grid search scores
+    _, ax = plt.subplots(1, 1)
 
-    # # Param1 is the X-axis, Param 2 is represented as a different curve (color line)
-    # for idx, val in enumerate(grid_param_2):
-    #     ax.plot(grid_param_1, scores_mean[idx, :], '-o', label=name_param + ': ' + str(val))
+    ax.plot(param_values.data.astype(np.float64), mean_test_score, '-o', label='test set')
+    ax.plot(param_values.astype(np.float64), mean_train_score, '-o', label='train set')
 
-    # ax.set_title("Grid Search Scores", fontsize=20, fontweight='bold')
-    # ax.set_xlabel(name_param_1, fontsize=16)
-    # ax.set_ylabel('CV Average Score', fontsize=16)
-    # ax.legend(loc="best", fontsize=15)
-    # ax.grid('on')
+    ax.set_title(f"{param_label} Grid Search Scores", fontsize=20, fontweight='bold')
+    ax.set_xlabel(param_label, fontsize=16)
+    ax.set_ylabel('Balanced Accuracy', fontsize=16)
+    ax.legend(loc="best", fontsize=15)
+    ax.grid('on')
+
+# Two plots: One comparing train and test performance; one comparing all of the fold scores against one another
 
 
-    # Calling Method
-plot_grid_search(pipe_grid.cv_results_, n_estimators, max_features, 'N Estimators', 'Max Features')
+# Calling Method
+# plot_grid_search(pipe_grid.cv_results_, n_estimators, max_features, 'N Estimators', 'Max Features')
+
+# Plot two - scores over each fold
+# scores_per_fold_K = []
+
+# _, ax = plt.subplots(1, 1)
+
+# # Param1 is the X-axis, Param 2 is represented as a different curve (color line)
+# for fold, scores_ in enumerate(scores_per_fold_K):
+#     ax.plot(grid_param_1, scores_mean[idx, :], '-o', label=name_param_2 + ': ' + str(val))
+
+# ax.set_title("Balanced Accuracy", fontsize=20, fontweight='bold')
+# ax.set_xlabel(name_param_1, fontsize=16)
+# ax.set_ylabel('CV Average Score', fontsize=16)
+# ax.legend(loc="best", fontsize=15)
+# ax.grid('on')

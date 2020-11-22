@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import sklearn
 # Plotting utils
 import matplotlib
 import matplotlib.pyplot as plt
@@ -83,6 +84,128 @@ def plot_cv_folds(cv_results, param_name, param_label, folds, log10=False, log2=
     ax.set_xlabel(param_label, fontsize=16)
     ax.set_ylabel('Balanced Accuracy', fontsize=16)
     ax.legend(loc="best", fontsize=15)
+
+
+def _confusion_matrix_idx(estimator, y_train, x_train):
+    # Get all of the indices for each quadrant in the confusion matrix
+    predictions = estimator.predict(x_train)
+
+    # Confusion matrix
+    confusion_matrix = sklearn.metrics.confusion_matrix(y_train, predictions)
+    print(confusion_matrix)
+
+    # True positives and true negatives
+    true_predictions = np.where(np.equal(y_train, predictions))[0]
+    assert(true_predictions.size == confusion_matrix[0][0] + confusion_matrix[1][1])
+    true_negatives = np.where(predictions[true_predictions] == 0)[0]
+    assert(true_negatives.size == confusion_matrix[0][0])
+    true_positives = np.where(predictions[true_predictions] == 1)[0]
+    assert(true_positives.size == confusion_matrix[1][1])
+
+    # False positives and false negatives
+    false_predictions = np.where(np.not_equal(y_train, predictions))[0]
+    assert(false_predictions.size == confusion_matrix[0][1] + confusion_matrix[1][0])
+    false_negatives = np.where(predictions[false_predictions] == 0)[0]
+    assert(false_negatives.size == confusion_matrix[1][0])
+    false_positives = np.where(predictions[false_predictions] == 1)[0]
+    assert(false_positives.size == confusion_matrix[0][1])
+    return (true_predictions[true_negatives], false_predictions[false_negatives],
+            false_predictions[false_positives], true_predictions[true_positives])
+
+
+def _characterize_examples(x_train_df, x_idx, preprocessor, tokenizer):
+    # Tokenize the text
+    x_train_text = x_train_df['text'].values[x_idx]
+    x_train_website = x_train_df['website_name'].values[x_idx]
+    x_train_text_processed = np.array([preprocessor(sent) for sent in x_train_text])
+    x_train_text_tokenized = np.array([tokenizer(sent) for sent in x_train_text_processed], dtype='object')
+
+    # Average length of the examples provided
+    len_checker = np.vectorize(len)
+    avg_length = np.mean(len_checker(x_train_text_tokenized))
+
+    # Website Breakdown of the examples provided
+    website_breakdowns = {
+        "imdb": np.count_nonzero(x_train_website == 'imdb') / len(x_idx),
+        "amazon": np.count_nonzero(x_train_website == 'amazon') / len(x_idx),
+        "yelp": np.count_nonzero(x_train_website == 'yelp') / len(x_idx)
+    }
+
+    # does it do better on sentences without negation words ("not", "didn't", "shouldn't", etc.)?
+    # This is what these negations words look like after sklearns default tokenization
+    negation_words = [
+        'no',
+        'not',
+        'none',
+        'nobody',
+        'nothing',
+        'neither',
+        'nowhere',
+        'never',
+        'doesn',
+        'isn',
+        'wasn',
+        'shouldn',
+        'wouldn',
+        'couldn',
+        'won',
+        #         'can', # ignoring can because it's doubly encoded
+        'don',
+    ]
+    sents_with_negations = 0
+    for sent in x_train_text_tokenized:
+        negations_in_sent = len(list(filter(lambda token: token in negation_words, sent)))
+        if negations_in_sent > 0:
+            sents_with_negations += 1
+
+    percentage_with_negations = sents_with_negations / len(x_idx)
+    # Pretty print the results
+    print(f"Average Length of Sentences:    {avg_length}")
+    print(f"Breakdown of website names:     {website_breakdowns}")
+    print(f"Percentage with negation words: {percentage_with_negations}")
+
+    return (avg_length, website_breakdowns, percentage_with_negations)
+
+
+def analysis_of_mistakes(pipeline_with_vectorizer, x_train_df, y_train):
+    x_train_text = x_train_df['text'].values
+    (tn_idx, fn_idx, fp_idx, tp_idx) = _confusion_matrix_idx(pipeline_with_vectorizer, y_train, x_train_text)
+
+    tf_preprocessor = pipeline_with_vectorizer[0].build_preprocessor()
+    tf_tokenizer = pipeline_with_vectorizer[0].build_tokenizer()
+
+    print("----- False Positives")
+    (fp_avg_length, fp_website_breakdowns, fp_percentage_with_negations) = _characterize_examples(x_train_df, fp_idx, tf_preprocessor, tf_tokenizer)
+    fp_text = x_train_text[fp_idx]
+    print('...Examples')
+    print('\n'.join(fp_text[:10]))
+    print()
+    print()
+
+    print("----- False Negatives")
+    (fn_avg_length, fn_website_breakdowns, fn_percentage_with_negations) = _characterize_examples(x_train_df, fn_idx, tf_preprocessor, tf_tokenizer)
+    fn_text = x_train_text[fn_idx]
+    print('...Examples')
+    print('\n'.join(fn_text[:10]))
+    print()
+    print()
+
+    print("----- True Positives")
+    (tp_avg_length, tp_website_breakdowns, tp_percentage_with_negations) = _characterize_examples(x_train_df, tp_idx, tf_preprocessor, tf_tokenizer)
+    tp_text = x_train_text[tp_idx]
+    print('...Examples')
+    print('\n'.join(tp_text[:10]))
+    print()
+    print()
+
+    print("----- True Negatives")
+    (tn_avg_length, tn_website_breakdowns, tn_percentage_with_negations) = _characterize_examples(x_train_df, tn_idx, tf_preprocessor, tf_tokenizer)
+    tn_text = x_train_text[tn_idx]
+    print('...Examples')
+    print('\n'.join(tn_text[:10]))
+    print()
+    print()
+
 
 # Calling Method
 # plot_grid_search(pipe_grid.cv_results_, n_estimators, max_features, 'N Estimators', 'Max Features')

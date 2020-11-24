@@ -96,7 +96,6 @@ def plot_cv_folds(cv_results, param_name, param_label, folds, log10=False, log2=
         average_train_x.append(np.mean(mean_train_score[value_idx]))
         average_test_x.append(np.mean(mean_test_score[value_idx]))
     ax.plot(x_values, average_test_x, '--sb', label=f'average validation across folds')
-    ax.plot(x_values, average_train_x, '--sr', label=f'average train across folds')
 
     # Get overall mean_train_score
     for fold in range(folds):
@@ -107,7 +106,7 @@ def plot_cv_folds(cv_results, param_name, param_label, folds, log10=False, log2=
             average_fold_scores.append(np.mean(fold_scores[value_idx]))
         ax.plot(x_values, average_fold_scores, 'o', label=f'{fold}-validation set average')
 
-    ax.set_title(f"{param_label}\n Grid Search Scores", fontsize=20, fontweight='bold')
+    ax.set_title(f"{param_label}\n Variation Across Folds", fontsize=20, fontweight='bold')
     ax.set_xlabel(param_label, fontsize=16)
     ax.set_ylabel('Balanced Accuracy', fontsize=16)
     ax.legend(loc="best", fontsize=15, bbox_to_anchor=(1, 1))

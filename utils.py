@@ -61,8 +61,8 @@ def plot_cv_train_test(cv_results, param_name, param_label, log10=False, log2=Fa
     # Plot the averages and the train/test values at various hyperparameter combinations
     ax.plot(x_values, mean_test_score, 'or', label='validation set')
     ax.plot(x_values, mean_train_score, 'ob', label='train set')
-    ax.plot(x_values, average_test_x, '--sr', label='average valid score')
-    ax.plot(x_values, average_train_x, '--sb', label='average train score')
+    ax.plot(x_values, average_test_x, '--sr', label='average validation')
+    ax.plot(x_values, average_train_x, '--sb', label='average train')
 
     ax.set_title(f"{param_label}\n Grid Search Scores", fontsize=20, fontweight='bold')
     ax.set_xlabel(param_label, fontsize=16)
@@ -95,8 +95,8 @@ def plot_cv_folds(cv_results, param_name, param_label, folds, log10=False, log2=
         value_idx = np.where(param_values == value)
         average_train_x.append(np.mean(mean_train_score[value_idx]))
         average_test_x.append(np.mean(mean_test_score[value_idx]))
-    ax.plot(x_values, average_test_x, '-bs', label=f'average test over all folds')
-    ax.plot(x_values, average_train_x, '-rs', label=f'average train over all folds')
+    ax.plot(x_values, average_test_x, '--sb', label=f'average validation across folds')
+    ax.plot(x_values, average_train_x, '--sr', label=f'average train across folds')
 
     # Get overall mean_train_score
     for fold in range(folds):
@@ -105,7 +105,7 @@ def plot_cv_folds(cv_results, param_name, param_label, folds, log10=False, log2=
         for i, value in enumerate(param_values):
             value_idx = np.where(param_values == value)
             average_fold_scores.append(np.mean(fold_scores[value_idx]))
-        ax.plot(x_values, average_fold_scores, 'o', label=f'{fold}-validation set')
+        ax.plot(x_values, average_fold_scores, 'o', label=f'{fold}-validation set average')
 
     ax.set_title(f"{param_label}\n Grid Search Scores", fontsize=20, fontweight='bold')
     ax.set_xlabel(param_label, fontsize=16)
@@ -227,7 +227,7 @@ def analysis_of_mistakes(pipeline_with_vectorizer, x_train_df, y_train):
     print()
 
     print("----- True Negatives")
-    (tn_avg_length, tn_website_breakdowns, tn_percentage_with_negations) = characterize_examples(x_train_df, tn_idx, tf_preprocessor, tf_tokenizer)
+    (tn_avg_length, tn_website_breakdowns, tn_percentage_with_negations) = _characterize_examples(x_train_df, tn_idx, tf_preprocessor, tf_tokenizer)
     tn_text = x_train_text[tn_idx]
     print('...Examples')
     print('\n'.join(tn_text[:10]))
